@@ -14,6 +14,7 @@ api_dashboard_bp = Blueprint('api_dashboard', __name__, url_prefix='/api/dashboa
 api_stats_bp = Blueprint('api_stats', __name__, url_prefix='/api/stats')
 api_activities_bp = Blueprint('api_activities', __name__, url_prefix='/api/activities')
 api_vehicles_bp = Blueprint('api_vehicles', __name__, url_prefix='/api/vehicles')
+api_rates_bp = Blueprint('api_rates', __name__, url_prefix='/api/parking-rates')
 
 # Page Routes
 @dashboard_bp.route('/')
@@ -241,4 +242,190 @@ def get_vehicle_details(vehicle_id):
         })
     except Exception as e:
         current_app.logger.error(f"Vehicle details error: {str(e)}")
+        return jsonify({'message': str(e), 'error': 'InternalError', 'code': 500}), 500
+
+# API Routes for Parking Rates
+@api_rates_bp.route('', methods=['GET'])
+@limiter.limit("60 per minute")
+@jwt_required
+def get_parking_rates():
+    try:
+        rates = ParkingRate.query.all()
+        return jsonify({
+            'status': 'success',
+            'data': {
+                'rates': [{
+                    'id': rate.Id,
+                    'vehicle_type': rate.VehicleType,
+                    'duration_type': rate.DurationType,
+                    'base_duration': rate.BaseDuration,
+                    'base_rate': float(rate.BaseRate),
+                    'additional_rate': float(rate.AdditionalRate) if rate.AdditionalRate else None,
+                    'max_daily_rate': float(rate.MaxDailyRate) if rate.MaxDailyRate else None,
+                    'is_active': rate.IsActive
+                } for rate in rates]
+            }
+        })
+    except Exception as e:
+        current_app.logger.error(f"Parking rates error: {str(e)}")
+        return jsonify({'message': str(e), 'error': 'InternalError', 'code': 500}), 500
+
+@api_rates_bp.route('/<rate_id>', methods=['GET'])
+@limiter.limit("60 per minute")
+@jwt_required
+def get_parking_rate(rate_id):
+    try:
+        rate = ParkingRate.query.get_or_404(rate_id)
+        return jsonify({
+            'status': 'success',
+            'data': {
+                'rate': {
+                    'id': rate.Id,
+                    'vehicle_type': rate.VehicleType,
+                    'duration_type': rate.DurationType,
+                    'base_duration': rate.BaseDuration,
+                    'base_rate': float(rate.BaseRate),
+                    'additional_rate': float(rate.AdditionalRate) if rate.AdditionalRate else None,
+                    'max_daily_rate': float(rate.MaxDailyRate) if rate.MaxDailyRate else None,
+                    'is_active': rate.IsActive
+                }
+            }
+        })
+    except Exception as e:
+        current_app.logger.error(f"Parking rate error: {str(e)}")
+        return jsonify({'message': str(e), 'error': 'InternalError', 'code': 500}), 500
+
+@api_rates_bp.route('', methods=['POST'])
+@limiter.limit("30 per minute")
+@jwt_required
+def create_parking_rate():
+    try:
+        data = request.get_json()
+        
+        # Validate required fields
+        required_fields = ['vehicle_type', 'duration_type', 'base_duration', 'base_rate']
+        for field in required_fields:
+            if field not in data:
+                return jsonify({
+                    'message': f'Missing required field: {field}',
+                    'error': 'ValidationError',
+                    'code': 400
+                }), 400
+        
+        # Create new rate
+        rate = ParkingRate(
+            VehicleType=data['vehicle_type'],
+            DurationType=data['duration_type'],
+            BaseDuration=data['base_duration'],
+            BaseRate=data['base_rate'],
+            AdditionalRate=data.get('additional_rate'),
+            MaxDailyRate=data.get('max_daily_rate'),
+            IsActive=data.get('is_active', True)
+        )
+        
+        db.session.add(rate)
+        db.session.commit()
+        
+        # Log activity
+        activity = ActivityLog(
+            Action='create_parking_rate',
+            Details=f"Created {data['duration_type']} rate for {data['vehicle_type']}",
+            Status='success'
+        )
+        db.session.add(activity)
+        db.session.commit()
+        
+        return jsonify({
+            'status': 'success',
+            'data': {
+                'rate': {
+                    'id': rate.Id,
+                    'vehicle_type': rate.VehicleType,
+                    'duration_type': rate.DurationType,
+                    'base_duration': rate.BaseDuration,
+                    'base_rate': float(rate.BaseRate),
+                    'additional_rate': float(rate.AdditionalRate) if rate.AdditionalRate else None,
+                    'max_daily_rate': float(rate.MaxDailyRate) if rate.MaxDailyRate else None,
+                    'is_active': rate.IsActive
+                }
+            }
+        })
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.error(f"Create parking rate error: {str(e)}")
+        return jsonify({'message': str(e), 'error': 'InternalError', 'code': 500}), 500
+
+@api_rates_bp.route('/<rate_id>', methods=['PUT'])
+@limiter.limit("30 per minute")
+@jwt_required
+def update_parking_rate(rate_id):
+    try:
+        rate = ParkingRate.query.get_or_404(rate_id)
+        data = request.get_json()
+        
+        # Update fields
+        rate.VehicleType = data.get('vehicle_type', rate.VehicleType)
+        rate.DurationType = data.get('duration_type', rate.DurationType)
+        rate.BaseDuration = data.get('base_duration', rate.BaseDuration)
+        rate.BaseRate = data.get('base_rate', rate.BaseRate)
+        rate.AdditionalRate = data.get('additional_rate', rate.AdditionalRate)
+        rate.MaxDailyRate = data.get('max_daily_rate', rate.MaxDailyRate)
+        rate.IsActive = data.get('is_active', rate.IsActive)
+        
+        db.session.commit()
+        
+        # Log activity
+        activity = ActivityLog(
+            Action='update_parking_rate',
+            Details=f"Updated {rate.DurationType} rate for {rate.VehicleType}",
+            Status='success'
+        )
+        db.session.add(activity)
+        db.session.commit()
+        
+        return jsonify({
+            'status': 'success',
+            'data': {
+                'rate': {
+                    'id': rate.Id,
+                    'vehicle_type': rate.VehicleType,
+                    'duration_type': rate.DurationType,
+                    'base_duration': rate.BaseDuration,
+                    'base_rate': float(rate.BaseRate),
+                    'additional_rate': float(rate.AdditionalRate) if rate.AdditionalRate else None,
+                    'max_daily_rate': float(rate.MaxDailyRate) if rate.MaxDailyRate else None,
+                    'is_active': rate.IsActive
+                }
+            }
+        })
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.error(f"Update parking rate error: {str(e)}")
+        return jsonify({'message': str(e), 'error': 'InternalError', 'code': 500}), 500
+
+@api_rates_bp.route('/<rate_id>', methods=['DELETE'])
+@limiter.limit("30 per minute")
+@jwt_required
+def delete_parking_rate(rate_id):
+    try:
+        rate = ParkingRate.query.get_or_404(rate_id)
+        
+        # Log activity before deletion
+        activity = ActivityLog(
+            Action='delete_parking_rate',
+            Details=f"Deleted {rate.DurationType} rate for {rate.VehicleType}",
+            Status='success'
+        )
+        
+        db.session.delete(rate)
+        db.session.add(activity)
+        db.session.commit()
+        
+        return jsonify({
+            'status': 'success',
+            'message': 'Parking rate deleted successfully'
+        })
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.error(f"Delete parking rate error: {str(e)}")
         return jsonify({'message': str(e), 'error': 'InternalError', 'code': 500}), 500

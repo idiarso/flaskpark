@@ -6,7 +6,7 @@ from models import db, AspNetUsers
 from routes import auth_bp, parking_bp, payment_bp, management_bp, report_bp, limiter
 from dashboard_routes import (
     dashboard_bp, api_dashboard_bp, api_stats_bp,
-    api_activities_bp, api_vehicles_bp
+    api_activities_bp, api_vehicles_bp, api_rates_bp
 )
 from config import Config
 
@@ -50,6 +50,7 @@ def create_app():
     app.register_blueprint(api_stats_bp)
     app.register_blueprint(api_activities_bp)
     app.register_blueprint(api_vehicles_bp)
+    app.register_blueprint(api_rates_bp)
     
     # Basic route for home page
     @app.route('/')
