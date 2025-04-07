@@ -4,7 +4,8 @@ from sqlalchemy import func, and_
 from models import (
     db, AspNetUsers, AspNetUserRoles, SystemConfig, ParkingRate,
     ActivityLog, HardwareStatus, Vehicles, ParkingTickets,
-    ParkingTransactions, ParkingSpaces
+    ParkingTransactions, ParkingSpaces, Members, MemberCards,
+    MemberRates, Staff, StaffAttendance, Shifts
 )
 from routes import jwt_required, limiter
 
@@ -16,34 +17,166 @@ api_activities_bp = Blueprint('api_activities', __name__, url_prefix='/api/activ
 api_vehicles_bp = Blueprint('api_vehicles', __name__, url_prefix='/api/vehicles')
 api_rates_bp = Blueprint('api_rates', __name__, url_prefix='/api/parking-rates')
 
-# Page Routes
+# Dashboard Pages
 @dashboard_bp.route('/')
+@jwt_required
 def index():
     return render_template('dashboard/index.html')
 
-@dashboard_bp.route('/vehicles')
-def vehicles():
-    return render_template('dashboard/vehicles.html')
+# Parking Management Routes
+@dashboard_bp.route('/parking/entry')
+@jwt_required
+def parking_entry():
+    return render_template('dashboard/parking_entry.html')
 
-@dashboard_bp.route('/parking-rates')
+@dashboard_bp.route('/parking/slots')
+@jwt_required
+def parking_slots():
+    return render_template('dashboard/parking_slots.html')
+
+@dashboard_bp.route('/parking/active')
+@jwt_required
+def active_sessions():
+    return render_template('dashboard/active_sessions.html')
+
+# Membership Management Routes
+@dashboard_bp.route('/members')
+@jwt_required
+def members():
+    return render_template('dashboard/members.html')
+
+@dashboard_bp.route('/members/cards')
+@jwt_required
+def member_cards():
+    return render_template('dashboard/member_cards.html')
+
+@dashboard_bp.route('/members/rates')
+@jwt_required
+def member_rates():
+    return render_template('dashboard/member_rates.html')
+
+# Staff Management Routes
+@dashboard_bp.route('/staff')
+@jwt_required
+def staff():
+    return render_template('dashboard/staff.html')
+
+@dashboard_bp.route('/staff/attendance')
+@jwt_required
+def staff_attendance():
+    return render_template('dashboard/staff_attendance.html')
+
+@dashboard_bp.route('/staff/shifts')
+@jwt_required
+def shifts():
+    return render_template('dashboard/shifts.html')
+
+# Reports Routes
+@dashboard_bp.route('/reports/financial')
+@jwt_required
+def financial_reports():
+    return render_template('dashboard/financial_reports.html')
+
+@dashboard_bp.route('/reports/usage')
+@jwt_required
+def usage_stats():
+    return render_template('dashboard/usage_stats.html')
+
+@dashboard_bp.route('/reports/activities')
+@jwt_required
+def activity_logs():
+    return render_template('dashboard/activity_logs.html')
+
+# Settings Routes
+@dashboard_bp.route('/settings/rates')
+@jwt_required
 def parking_rates():
     return render_template('dashboard/parking_rates.html')
 
-@dashboard_bp.route('/hardware')
+@dashboard_bp.route('/settings/hardware')
+@jwt_required
 def hardware():
     return render_template('dashboard/hardware.html')
 
-@dashboard_bp.route('/activities')
-def activities():
-    return render_template('dashboard/activities.html')
+@dashboard_bp.route('/settings/users')
+@jwt_required
+def users():
+    return render_template('dashboard/users.html')
 
-@dashboard_bp.route('/reports')
-def reports():
-    return render_template('dashboard/reports.html')
+@dashboard_bp.route('/settings/system')
+@jwt_required
+def system_settings():
+    return render_template('dashboard/system_settings.html')
 
-@dashboard_bp.route('/settings')
-def settings():
-    return render_template('dashboard/settings.html')
+@dashboard_bp.route('/profile')
+@jwt_required
+def profile():
+    return render_template('dashboard/profile.html')
+
+# API Routes for Dashboard Stats
+@api_dashboard_bp.route('/stats/overview')
+@limiter.limit("60 per minute")
+@jwt_required
+def get_overview_stats():
+    try:
+        # Get current stats
+        active_sessions = ParkingTickets.query.filter_by(ExitTime=None).count()
+        total_spaces = ParkingSpaces.query.count()
+        available_spaces = ParkingSpaces.query.filter_by(IsOccupied=False).count()
+        
+        # Get today's revenue
+        today = datetime.now().date()
+        today_revenue = db.session.query(func.sum(ParkingTransactions.Amount))\
+            .filter(func.date(ParkingTransactions.CreatedAt) == today)\
+            .scalar() or 0
+        
+        return jsonify({
+            'status': 'success',
+            'data': {
+                'active_sessions': active_sessions,
+                'total_spaces': total_spaces,
+                'available_spaces': available_spaces,
+                'occupancy_rate': round((total_spaces - available_spaces) / total_spaces * 100 if total_spaces > 0 else 0, 2),
+                'today_revenue': float(today_revenue)
+            }
+        })
+    except Exception as e:
+        current_app.logger.error(f"Dashboard stats error: {str(e)}")
+        return jsonify({'message': str(e), 'error': 'InternalError', 'code': 500}), 500
+
+# API Routes for Activities
+@api_activities_bp.route('')
+@limiter.limit("60 per minute")
+@jwt_required
+def get_activities():
+    try:
+        page = request.args.get('page', 1, type=int)
+        per_page = request.args.get('per_page', 10, type=int)
+        
+        activities = ActivityLog.query\
+            .order_by(ActivityLog.CreatedAt.desc())\
+            .paginate(page=page, per_page=per_page)
+        
+        return jsonify({
+            'status': 'success',
+            'data': {
+                'activities': [{
+                    'id': activity.Id,
+                    'action': activity.Action,
+                    'details': activity.Details,
+                    'status': activity.Status,
+                    'created_at': activity.CreatedAt.isoformat()
+                } for activity in activities.items],
+                'pagination': {
+                    'page': activities.page,
+                    'pages': activities.pages,
+                    'total': activities.total
+                }
+            }
+        })
+    except Exception as e:
+        current_app.logger.error(f"Activities error: {str(e)}")
+        return jsonify({'message': str(e), 'error': 'InternalError', 'code': 500}), 500
 
 # API Routes
 @api_dashboard_bp.route('', methods=['GET'])

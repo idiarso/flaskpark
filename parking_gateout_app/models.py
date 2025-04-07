@@ -1,115 +1,162 @@
-from flask_sqlalchemy import SQLAlchemy
-from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime
-import uuid
+from flask_sqlalchemy import SQLAlchemy
+from flask_login import UserMixin
 
 db = SQLAlchemy()
 
-class AspNetUsers(db.Model):
-    __tablename__ = 'AspNetUsers'
+class AspNetUsers(db.Model, UserMixin):
     Id = db.Column(db.String(36), primary_key=True)
-    UserName = db.Column(db.String(256), unique=True, nullable=False)
+    UserName = db.Column(db.String(256))
     Email = db.Column(db.String(256))
-    PasswordHash = db.Column(db.String(256), nullable=False)
-    FullName = db.Column(db.String(100))
+    PasswordHash = db.Column(db.String(256))
+    FullName = db.Column(db.String(256))
     CreatedAt = db.Column(db.DateTime, default=datetime.utcnow)
-    LastLogin = db.Column(db.DateTime)
     IsActive = db.Column(db.Boolean, default=True)
 
-    def set_password(self, password):
-        self.PasswordHash = generate_password_hash(password)
-
-    def check_password(self, password):
-        return check_password_hash(self.PasswordHash, password)
+class AspNetRoles(db.Model):
+    Id = db.Column(db.String(36), primary_key=True)
+    Name = db.Column(db.String(256))
+    Description = db.Column(db.String(256))
 
 class AspNetUserRoles(db.Model):
-    __tablename__ = 'AspNetUserRoles'
-    UserId = db.Column(db.String(36), db.ForeignKey('AspNetUsers.Id'), primary_key=True)
-    RoleId = db.Column(db.String(36), primary_key=True)
+    UserId = db.Column(db.String(36), db.ForeignKey('asp_net_users.Id'), primary_key=True)
+    RoleId = db.Column(db.String(36), db.ForeignKey('asp_net_roles.Id'), primary_key=True)
 
 class SystemConfig(db.Model):
-    __tablename__ = 'SystemConfig'
-    Id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
-    ConfigKey = db.Column(db.String(50), unique=True, nullable=False)
+    Id = db.Column(db.Integer, primary_key=True)
+    ConfigKey = db.Column(db.String(50), unique=True)
     ConfigValue = db.Column(db.String(500))
-    Description = db.Column(db.String(200))
-    UpdatedAt = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    UpdatedBy = db.Column(db.String(36), db.ForeignKey('AspNetUsers.Id'))
+    Description = db.Column(db.String(500))
+    UpdatedAt = db.Column(db.DateTime, default=datetime.utcnow)
+    UpdatedBy = db.Column(db.String(36), db.ForeignKey('asp_net_users.Id'))
 
 class ParkingRate(db.Model):
-    __tablename__ = 'ParkingRates'
-    Id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
-    VehicleType = db.Column(db.String(50), nullable=False)
-    BaseRate = db.Column(db.Numeric(10, 2), nullable=False)
-    HourlyRate = db.Column(db.Numeric(10, 2), nullable=False)
-    MaximumDaily = db.Column(db.Numeric(10, 2))
+    Id = db.Column(db.Integer, primary_key=True)
+    VehicleType = db.Column(db.String(50))
+    DurationType = db.Column(db.String(20))  # hourly, daily, monthly
+    BaseDuration = db.Column(db.Integer)  # in minutes
+    BaseRate = db.Column(db.Numeric(10, 2))
+    AdditionalRate = db.Column(db.Numeric(10, 2))
+    MaxDailyRate = db.Column(db.Numeric(10, 2))
     IsActive = db.Column(db.Boolean, default=True)
-    UpdatedAt = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    UpdatedBy = db.Column(db.String(36), db.ForeignKey('AspNetUsers.Id'))
-
-class ActivityLog(db.Model):
-    __tablename__ = 'ActivityLogs'
-    Id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
-    UserId = db.Column(db.String(36), db.ForeignKey('AspNetUsers.Id'))
-    Action = db.Column(db.String(50), nullable=False)
-    Details = db.Column(db.String(500))
-    IpAddress = db.Column(db.String(50))
     CreatedAt = db.Column(db.DateTime, default=datetime.utcnow)
-    Status = db.Column(db.String(20))
+    UpdatedAt = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
-class HardwareStatus(db.Model):
-    __tablename__ = 'HardwareStatus'
-    Id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
-    DeviceType = db.Column(db.String(50), nullable=False)
-    DeviceId = db.Column(db.String(50), nullable=False)
-    Status = db.Column(db.String(20), nullable=False)
-    LastPing = db.Column(db.DateTime)
-    Location = db.Column(db.String(100))
-    Details = db.Column(db.String(500))
+class Members(db.Model):
+    Id = db.Column(db.Integer, primary_key=True)
+    MemberNumber = db.Column(db.String(20), unique=True)
+    FullName = db.Column(db.String(100))
+    Email = db.Column(db.String(100))
+    Phone = db.Column(db.String(20))
+    Address = db.Column(db.String(200))
+    JoinDate = db.Column(db.DateTime, default=datetime.utcnow)
+    ExpiryDate = db.Column(db.DateTime)
+    Status = db.Column(db.String(20))  # active, expired, suspended
+    CreatedAt = db.Column(db.DateTime, default=datetime.utcnow)
+    UpdatedAt = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+class MemberCards(db.Model):
+    Id = db.Column(db.Integer, primary_key=True)
+    MemberId = db.Column(db.Integer, db.ForeignKey('members.Id'))
+    CardNumber = db.Column(db.String(50), unique=True)
+    IssuedDate = db.Column(db.DateTime, default=datetime.utcnow)
+    ExpiryDate = db.Column(db.DateTime)
+    Status = db.Column(db.String(20))  # active, expired, lost, replaced
+    ReplacementReason = db.Column(db.String(200))
+    CreatedAt = db.Column(db.DateTime, default=datetime.utcnow)
+
+class MemberRates(db.Model):
+    Id = db.Column(db.Integer, primary_key=True)
+    MembershipType = db.Column(db.String(50))  # regular, premium, vip
+    VehicleType = db.Column(db.String(50))
+    DurationType = db.Column(db.String(20))
+    Rate = db.Column(db.Numeric(10, 2))
+    IsActive = db.Column(db.Boolean, default=True)
+    CreatedAt = db.Column(db.DateTime, default=datetime.utcnow)
+
+class Staff(db.Model):
+    Id = db.Column(db.Integer, primary_key=True)
+    StaffNumber = db.Column(db.String(20), unique=True)
+    FullName = db.Column(db.String(100))
+    Email = db.Column(db.String(100))
+    Phone = db.Column(db.String(20))
+    Position = db.Column(db.String(50))
+    JoinDate = db.Column(db.DateTime, default=datetime.utcnow)
+    Status = db.Column(db.String(20))  # active, inactive
+    UserId = db.Column(db.String(36), db.ForeignKey('asp_net_users.Id'))
+    CreatedAt = db.Column(db.DateTime, default=datetime.utcnow)
+
+class StaffAttendance(db.Model):
+    Id = db.Column(db.Integer, primary_key=True)
+    StaffId = db.Column(db.Integer, db.ForeignKey('staff.Id'))
+    CheckInTime = db.Column(db.DateTime)
+    CheckOutTime = db.Column(db.DateTime)
+    ShiftId = db.Column(db.Integer, db.ForeignKey('shifts.Id'))
+    Status = db.Column(db.String(20))  # present, absent, late
+    Notes = db.Column(db.String(200))
+
+class Shifts(db.Model):
+    Id = db.Column(db.Integer, primary_key=True)
+    ShiftName = db.Column(db.String(50))
+    StartTime = db.Column(db.Time)
+    EndTime = db.Column(db.Time)
+    Description = db.Column(db.String(200))
+    IsActive = db.Column(db.Boolean, default=True)
 
 class Vehicles(db.Model):
-    __tablename__ = 'Vehicles'
-    Id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
-    PlateNumber = db.Column(db.String(20), unique=True, nullable=False)
+    Id = db.Column(db.Integer, primary_key=True)
+    PlateNumber = db.Column(db.String(20))
     VehicleType = db.Column(db.String(50))
-    IsParked = db.Column(db.Boolean, default=False)
-    EntryTime = db.Column(db.DateTime)
-    LastUpdated = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-
-class ParkingTickets(db.Model):
-    __tablename__ = 'ParkingTickets'
-    Id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
-    TicketNumber = db.Column(db.String(20), unique=True, nullable=False)
-    VehicleId = db.Column(db.String(36), db.ForeignKey('Vehicles.Id'))
-    EntryTime = db.Column(db.DateTime, nullable=False)
-    ExitTime = db.Column(db.DateTime)
-    Status = db.Column(db.String(20), default='active')
-    IssuedBy = db.Column(db.String(36), db.ForeignKey('AspNetUsers.Id'))
-
-class ParkingTransactions(db.Model):
-    __tablename__ = 'ParkingTransactions'
-    Id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
-    TicketId = db.Column(db.String(36), db.ForeignKey('ParkingTickets.Id'))
-    Amount = db.Column(db.Numeric(10, 2), nullable=False)
-    PaymentMethod = db.Column(db.String(20))
-    PaymentStatus = db.Column(db.String(20))
-    ProcessedAt = db.Column(db.DateTime, default=datetime.utcnow)
-    ProcessedBy = db.Column(db.String(36), db.ForeignKey('AspNetUsers.Id'))
+    MemberId = db.Column(db.Integer, db.ForeignKey('members.Id'))
+    Status = db.Column(db.String(20))  # registered, blacklisted
+    CreatedAt = db.Column(db.DateTime, default=datetime.utcnow)
 
 class ParkingSpaces(db.Model):
-    __tablename__ = 'ParkingSpaces'
-    Id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
-    SpaceNumber = db.Column(db.String(10), unique=True, nullable=False)
+    Id = db.Column(db.Integer, primary_key=True)
+    SpaceNumber = db.Column(db.String(10))
+    Level = db.Column(db.String(10))
+    Section = db.Column(db.String(10))
     VehicleType = db.Column(db.String(50))
-    Status = db.Column(db.String(20), default='available')
-    CurrentVehicleId = db.Column(db.String(36), db.ForeignKey('Vehicles.Id'))
-    LastUpdated = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    IsOccupied = db.Column(db.Boolean, default=False)
+    Status = db.Column(db.String(20))  # available, maintenance, reserved
 
-class AccessTokens(db.Model):
-    __tablename__ = 'AccessTokens'
-    Id = db.Column(db.String(36), primary_key=True)
-    Token = db.Column(db.String(500), nullable=False)
-    UserId = db.Column(db.String(36), db.ForeignKey('AspNetUsers.Id'))
+class ParkingTickets(db.Model):
+    Id = db.Column(db.Integer, primary_key=True)
+    TicketNumber = db.Column(db.String(20), unique=True)
+    VehicleId = db.Column(db.Integer, db.ForeignKey('vehicles.Id'))
+    SpaceId = db.Column(db.Integer, db.ForeignKey('parking_spaces.Id'))
+    EntryTime = db.Column(db.DateTime, default=datetime.utcnow)
+    ExitTime = db.Column(db.DateTime)
+    Duration = db.Column(db.Integer)  # in minutes
+    Amount = db.Column(db.Numeric(10, 2))
+    Status = db.Column(db.String(20))  # active, completed, cancelled
+    CreatedBy = db.Column(db.String(36), db.ForeignKey('asp_net_users.Id'))
+
+class ParkingTransactions(db.Model):
+    Id = db.Column(db.Integer, primary_key=True)
+    TicketId = db.Column(db.Integer, db.ForeignKey('parking_tickets.Id'))
+    TransactionNumber = db.Column(db.String(20), unique=True)
+    Amount = db.Column(db.Numeric(10, 2))
+    PaymentMethod = db.Column(db.String(20))
+    Status = db.Column(db.String(20))  # pending, completed, failed
     CreatedAt = db.Column(db.DateTime, default=datetime.utcnow)
-    ExpiresAt = db.Column(db.DateTime, nullable=False)
-    IsRevoked = db.Column(db.Boolean, default=False)
+    ProcessedBy = db.Column(db.String(36), db.ForeignKey('asp_net_users.Id'))
+
+class HardwareStatus(db.Model):
+    Id = db.Column(db.Integer, primary_key=True)
+    DeviceId = db.Column(db.String(50))
+    DeviceType = db.Column(db.String(50))  # entry_gate, exit_gate, camera, sensor
+    Location = db.Column(db.String(100))
+    Status = db.Column(db.String(20))  # online, offline, maintenance
+    LastPing = db.Column(db.DateTime)
+    IpAddress = db.Column(db.String(15))
+    Details = db.Column(db.JSON)
+
+class ActivityLog(db.Model):
+    Id = db.Column(db.Integer, primary_key=True)
+    Action = db.Column(db.String(50))
+    Details = db.Column(db.String(500))
+    Status = db.Column(db.String(20))  # success, failed
+    UserId = db.Column(db.String(36), db.ForeignKey('asp_net_users.Id'))
+    IpAddress = db.Column(db.String(15))
+    CreatedAt = db.Column(db.DateTime, default=datetime.utcnow)
