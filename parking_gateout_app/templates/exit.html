@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/static/css/style.css">
+    <title>Exit Vehicle</title>
+</head>
+<body>
+    <div class="container">
+        <h2>Process Vehicle Exit</h2>
+        <form id="exitForm">
+            <label for="ticketNumber">Enter Ticket Number:</label>
+            <input type="text" id="ticketNumber" name="ticketNumber" placeholder="e.g., TKT20250407012345" required>
+            <button type="button" id="calculateFeeBtn">Calculate Fee</button>
+        </form>
+        <div id="resultSection" style="display:none;">
+            <h3>Vehicle Details</h3>
+            <p id="vehicleDetails"></p>
+            <p id="totalFee"></p>
+            <label for="paymentMethod">Payment Method:</label>
+            <select id="paymentMethod">
+                <option value="Cash">Cash</option>
+                <option value="Card">Card</option>
+            </select>
+            <button type="button" id="processPaymentBtn">Process Payment</button>
+            <div id="paymentMessage"></div>
+        </div>
+        <div id="errorMessage" style="color:red;"></div>
+    </div>
+    <script src="/static/js/script.js"></script>
+</body>
+</html>

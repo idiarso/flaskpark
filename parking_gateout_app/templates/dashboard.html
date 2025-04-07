@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/static/css/style.css">
+    <title>Dashboard</title>
+</head>
+<body>
+    <div class="container">
+        <h2>Operator Dashboard</h2>
+        <h3>Active Vehicles</h3>
+        <table id="activeVehiclesTable">
+            <thead>
+                <tr>
+                    <th>Plate Number</th>
+                    <th>Entry Time</th>
+                    <th>Parking Space ID</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Active vehicles will be populated here -->
+            </tbody>
+        </table>
+        <h3>Recent Payments</h3>
+        <table id="recentPaymentsTable">
+            <thead>
+                <tr>
+                    <th>Ticket ID</th>
+                    <th>Amount</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Recent payments will be populated here -->
+            </tbody>
+        </table>
+    </div>
+    <script src="/static/js/script.js"></script>
+</body>
+</html>

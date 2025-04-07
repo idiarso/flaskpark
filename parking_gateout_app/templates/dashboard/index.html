@@ -1,0 +1,187 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h1 class="h3 mb-4">Dashboard</h1>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Stats Cards -->
+    <div class="col-xl-3 col-md-6">
+        <div class="card card-stats bg-primary text-white">
+            <div class="card-body">
+                <div class="row">
+                    <div class="col">
+                        <h5 class="card-title text-uppercase mb-0 text-white-50">Active Sessions</h5>
+                        <span class="card-value h2 font-weight-bold mb-0" id="active-sessions">0</span>
+                    </div>
+                    <div class="col-auto">
+                        <div class="icon icon-shape bg-white text-primary rounded-circle shadow">
+                            <i class="bx bx-car"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-md-6">
+        <div class="card card-stats bg-info text-white">
+            <div class="card-body">
+                <div class="row">
+                    <div class="col">
+                        <h5 class="card-title text-uppercase mb-0 text-white-50">Available Spaces</h5>
+                        <span class="card-value h2 font-weight-bold mb-0" id="available-spaces">0</span>
+                    </div>
+                    <div class="col-auto">
+                        <div class="icon icon-shape bg-white text-info rounded-circle shadow">
+                            <i class="bx bx-map-alt"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-md-6">
+        <div class="card card-stats bg-success text-white">
+            <div class="card-body">
+                <div class="row">
+                    <div class="col">
+                        <h5 class="card-title text-uppercase mb-0 text-white-50">Today's Revenue</h5>
+                        <span class="card-value h2 font-weight-bold mb-0" id="today-revenue">$0</span>
+                    </div>
+                    <div class="col-auto">
+                        <div class="icon icon-shape bg-white text-success rounded-circle shadow">
+                            <i class="bx bx-money"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-md-6">
+        <div class="card card-stats bg-warning text-white">
+            <div class="card-body">
+                <div class="row">
+                    <div class="col">
+                        <h5 class="card-title text-uppercase mb-0 text-white-50">Total Vehicles</h5>
+                        <span class="card-value h2 font-weight-bold mb-0" id="total-vehicles">0</span>
+                    </div>
+                    <div class="col-auto">
+                        <div class="icon icon-shape bg-white text-warning rounded-circle shadow">
+                            <i class="bx bx-list-ul"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <!-- Hardware Status -->
+    <div class="col-12 col-lg-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Hardware Status</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table" id="hardware-status">
+                        <thead>
+                            <tr>
+                                <th>Device</th>
+                                <th>Location</th>
+                                <th>Status</th>
+                                <th>Last Update</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Activities -->
+    <div class="col-12 col-lg-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Recent Activities</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table" id="recent-activities">
+                        <thead>
+                            <tr>
+                                <th>Time</th>
+                                <th>Action</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function updateDashboard() {
+    // Get dashboard data
+    fetch('/api/dashboard')
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                document.getElementById('active-sessions').textContent = data.data.active_sessions;
+                document.getElementById('available-spaces').textContent = data.data.available_spaces;
+                document.getElementById('today-revenue').textContent = '$' + data.data.today_revenue.toFixed(2);
+                document.getElementById('total-vehicles').textContent = data.data.total_vehicles;
+                
+                // Update hardware status
+                const hardwareTable = document.getElementById('hardware-status').getElementsByTagName('tbody')[0];
+                hardwareTable.innerHTML = '';
+                data.data.hardware_status.forEach(device => {
+                    const row = hardwareTable.insertRow();
+                    row.innerHTML = `
+                        <td>${device.device_type}</td>
+                        <td>${device.location}</td>
+                        <td><span class="badge bg-${device.status === 'online' ? 'success' : 'danger'}">${device.status}</span></td>
+                        <td>${new Date(device.last_ping).toLocaleString()}</td>
+                    `;
+                });
+            }
+        });
+    
+    // Get recent activities
+    fetch('/api/activities?per_page=5')
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                const activitiesTable = document.getElementById('recent-activities').getElementsByTagName('tbody')[0];
+                activitiesTable.innerHTML = '';
+                data.data.activities.forEach(activity => {
+                    const row = activitiesTable.insertRow();
+                    row.innerHTML = `
+                        <td>${new Date(activity.created_at).toLocaleString()}</td>
+                        <td>${activity.action}</td>
+                        <td><span class="badge bg-${activity.status === 'success' ? 'success' : 'danger'}">${activity.status}</span></td>
+                    `;
+                });
+            }
+        });
+}
+
+// Update dashboard every 30 seconds
+updateDashboard();
+setInterval(updateDashboard, 30000);
+</script>
+{% endblock %}

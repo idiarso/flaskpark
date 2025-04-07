@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/static/css/style.css">
+    <title>Parking Reports</title>
+</head>
+<body>
+    <div class="container">
+        <h2>Parking Reports</h2>
+        
+        <!-- Report Selection Form -->
+        <form id="reportForm">
+            <div class="form-group">
+                <label for="reportType">Report Type:</label>
+                <select id="reportType" name="reportType">
+                    <option value="daily">Daily Report</option>
+                    <option value="monthly">Monthly Report</option>
+                    <option value="custom">Custom Report</option>
+                </select>
+            </div>
+
+            <!-- Daily Report Fields -->
+            <div id="dailyFields" class="report-fields">
+                <label for="dailyDate">Select Date:</label>
+                <input type="date" id="dailyDate" name="dailyDate">
+            </div>
+
+            <!-- Monthly Report Fields -->
+            <div id="monthlyFields" class="report-fields" style="display:none;">
+                <label for="monthSelect">Select Month:</label>
+                <select id="monthSelect" name="month">
+                    <option value="1">January</option>
+                    <option value="2">February</option>
+                    <option value="3">March</option>
+                    <option value="4">April</option>
+                    <option value="5">May</option>
+                    <option value="6">June</option>
+                    <option value="7">July</option>
+                    <option value="8">August</option>
+                    <option value="9">September</option>
+                    <option value="10">October</option>
+                    <option value="11">November</option>
+                    <option value="12">December</option>
+                </select>
+
+                <label for="yearSelect">Select Year:</label>
+                <select id="yearSelect" name="year">
+                    <option value="2023">2023</option>
+                    <option value="2024">2024</option>
+                    <option value="2025">2025</option>
+                </select>
+            </div>
+
+            <!-- Custom Report Fields -->
+            <div id="customFields" class="report-fields" style="display:none;">
+                <label for="startDate">Start Date:</label>
+                <input type="date" id="startDate" name="startDate">
+                
+                <label for="endDate">End Date:</label>
+                <input type="date" id="endDate" name="endDate">
+            </div>
+
+            <button type="button" id="generateReportBtn">Generate Report</button>
+        </form>
+
+        <!-- Report Display Section -->
+        <div id="reportResults" style="display:none;">
+            <h3>Report Results</h3>
+            <table id="reportTable">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Total Vehicles Exited</th>
+                        <th>Total Revenue (Rp)</th>
+                        <th>Average Parking Duration</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Report data will be populated here -->
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <td><strong>Grand Total</strong></td>
+                        <td id="totalVehicles">0</td>
+                        <td id="totalRevenue">Rp 0</td>
+                        <td id="avgDuration">-</td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+
+        <!-- Error Message Section -->
+        <div id="errorMessage" class="error-message" style="display:none;">
+            No data available for this period
+        </div>
+    </div>
+    <script src="/static/js/script.js"></script>
+</body>
+</html>
