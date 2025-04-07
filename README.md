@@ -1,17 +1,51 @@
 # FlashPark - Parking Management System
 
-A modern parking management system built with Flask, featuring:
+A modern parking management system built with Flask, featuring comprehensive parking management, membership system, staff management, and reporting capabilities.
 
-- Real-time parking space monitoring
-- Vehicle management
-- Automated entry/exit system
-- Payment processing
-- Admin dashboard
-- Hardware monitoring
+## Core Features
+
+### 1. Parking Management
+- Manual entry/exit vehicle recording
+- Automatic fee calculation
+- Parking slot management
+- Receipt printing
+- Barcode membership card system
+- Staff card management
+
+### 2. Membership Management
+- New member registration
+- Member card printing with barcode
+- Special member rates configuration
+- Member parking history
+- Membership renewal
+- Lost card replacement
+
+### 3. Staff Management
+- Staff ID card generation with barcode
+- Staff attendance system
+- Shift management
+- Staff performance monitoring
+- Staff activity history
+
+### 4. Admin Dashboard
+- Parking occupancy monitoring
+- Daily/monthly revenue reports
+- User and access rights management
+- Parking rate configuration
+
+### 5. Reporting System
+- Financial reports
+- Usage statistics
+- Data export (PDF, Excel)
+- System audit logs
+
+### 6. Security Features
+- Role-based access control (Admin & Operator)
 - Activity logging
-- Reporting system
+- Data encryption
+- Regular backup & restore
 
-## Features
+## Technical Features
 
 - **User Management**: Secure authentication and role-based access control
 - **Vehicle Tracking**: Real-time monitoring of vehicles and parking spaces
@@ -51,6 +85,20 @@ cp .env.example .env
 ```bash
 python app.py
 ```
+
+## System Requirements
+
+### Software Requirements
+- Python 3.8 or higher
+- PostgreSQL 12 or higher
+- Modern web browser (Chrome, Firefox, Safari)
+
+### Hardware Requirements
+- Entry/Exit gates with controllers
+- Barcode scanners
+- Receipt printers
+- Cameras (optional)
+- Parking sensors (optional)
 
 ## License
 

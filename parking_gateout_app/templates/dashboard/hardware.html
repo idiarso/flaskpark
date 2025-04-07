@@ -1,0 +1,477 @@
+{% extends "base.html" %}
+
+{% block title %}Hardware Monitoring{% endblock %}
+
+{% block extra_css %}
+<style>
+.device-card {
+    transition: all 0.3s ease;
+}
+.device-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+.status-indicator {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    display: inline-block;
+    margin-right: 5px;
+}
+.status-online {
+    background-color: #28a745;
+    box-shadow: 0 0 10px #28a745;
+}
+.status-offline {
+    background-color: #dc3545;
+    box-shadow: 0 0 10px #dc3545;
+}
+.status-warning {
+    background-color: #ffc107;
+    box-shadow: 0 0 10px #ffc107;
+}
+.device-stats {
+    font-size: 0.9rem;
+}
+.chart-container {
+    height: 300px;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1 class="h3">Hardware Monitoring</h1>
+            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addDeviceModal">
+                <i class="bx bx-plus"></i> Add Device
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Status Overview -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card bg-success text-white">
+            <div class="card-body">
+                <h5 class="card-title">Online Devices</h5>
+                <h2 class="mb-0" id="online-count">0</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-danger text-white">
+            <div class="card-body">
+                <h5 class="card-title">Offline Devices</h5>
+                <h2 class="mb-0" id="offline-count">0</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-warning text-white">
+            <div class="card-body">
+                <h5 class="card-title">Warnings</h5>
+                <h2 class="mb-0" id="warning-count">0</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-info text-white">
+            <div class="card-body">
+                <h5 class="card-title">Total Devices</h5>
+                <h2 class="mb-0" id="total-count">0</h2>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Device Grid -->
+<div class="row" id="device-grid">
+    <!-- Populated by JavaScript -->
+</div>
+
+<!-- Performance Charts -->
+<div class="row mt-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Response Time History</h5>
+            </div>
+            <div class="card-body">
+                <div class="chart-container">
+                    <canvas id="responseTimeChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Device Status Distribution</h5>
+            </div>
+            <div class="card-body">
+                <div class="chart-container">
+                    <canvas id="statusDistributionChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Device Modal -->
+<div class="modal fade" id="addDeviceModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Add New Device</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="addDeviceForm">
+                    <div class="mb-3">
+                        <label class="form-label">Device Type</label>
+                        <select class="form-select" name="deviceType" required>
+                            <option value="entry_gate">Entry Gate</option>
+                            <option value="exit_gate">Exit Gate</option>
+                            <option value="camera">Camera</option>
+                            <option value="sensor">Sensor</option>
+                            <option value="payment_terminal">Payment Terminal</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Device ID</label>
+                        <input type="text" class="form-control" name="deviceId" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Location</label>
+                        <input type="text" class="form-control" name="location" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">IP Address</label>
+                        <input type="text" class="form-control" name="ipAddress" required pattern="^(\d{1,3}\.){3}\d{1,3}$">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="saveDevice">Save Device</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Device Details Modal -->
+<div class="modal fade" id="deviceDetailsModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Device Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>Device Information</h6>
+                        <dl class="row">
+                            <dt class="col-sm-4">Device ID</dt>
+                            <dd class="col-sm-8" id="detail-device-id"></dd>
+                            <dt class="col-sm-4">Type</dt>
+                            <dd class="col-sm-8" id="detail-type"></dd>
+                            <dt class="col-sm-4">Location</dt>
+                            <dd class="col-sm-8" id="detail-location"></dd>
+                            <dt class="col-sm-4">IP Address</dt>
+                            <dd class="col-sm-8" id="detail-ip"></dd>
+                            <dt class="col-sm-4">Status</dt>
+                            <dd class="col-sm-8" id="detail-status"></dd>
+                            <dt class="col-sm-4">Last Ping</dt>
+                            <dd class="col-sm-8" id="detail-last-ping"></dd>
+                        </dl>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Performance Metrics</h6>
+                        <dl class="row">
+                            <dt class="col-sm-6">Avg Response Time</dt>
+                            <dd class="col-sm-6" id="detail-response-time"></dd>
+                            <dt class="col-sm-6">Uptime (24h)</dt>
+                            <dd class="col-sm-6" id="detail-uptime"></dd>
+                            <dt class="col-sm-6">Error Rate (24h)</dt>
+                            <dd class="col-sm-6" id="detail-error-rate"></dd>
+                        </dl>
+                    </div>
+                </div>
+                <div class="row mt-4">
+                    <div class="col-12">
+                        <h6>Recent Events</h6>
+                        <div class="table-responsive">
+                            <table class="table table-sm" id="deviceEventsTable">
+                                <thead>
+                                    <tr>
+                                        <th>Time</th>
+                                        <th>Event</th>
+                                        <th>Status</th>
+                                        <th>Details</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- Populated by JavaScript -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-warning" id="restartDevice">Restart Device</button>
+                <button type="button" class="btn btn-danger" id="deleteDevice">Delete Device</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+let responseTimeChart;
+let statusDistributionChart;
+
+function initCharts() {
+    // Response Time Chart
+    const rtCtx = document.getElementById('responseTimeChart').getContext('2d');
+    responseTimeChart = new Chart(rtCtx, {
+        type: 'line',
+        data: {
+            labels: [],
+            datasets: [{
+                label: 'Average Response Time (ms)',
+                data: [],
+                borderColor: '#4723D9',
+                tension: 0.4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+    
+    // Status Distribution Chart
+    const sdCtx = document.getElementById('statusDistributionChart').getContext('2d');
+    statusDistributionChart = new Chart(sdCtx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Online', 'Offline', 'Warning'],
+            datasets: [{
+                data: [0, 0, 0],
+                backgroundColor: ['#28a745', '#dc3545', '#ffc107']
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false
+        }
+    });
+}
+
+function updateDeviceGrid(devices) {
+    const grid = document.getElementById('device-grid');
+    grid.innerHTML = '';
+    
+    let onlineCount = 0;
+    let offlineCount = 0;
+    let warningCount = 0;
+    
+    devices.forEach(device => {
+        // Update counters
+        if (device.status === 'online') onlineCount++;
+        else if (device.status === 'offline') offlineCount++;
+        else if (device.status === 'warning') warningCount++;
+        
+        const col = document.createElement('div');
+        col.className = 'col-md-4 mb-4';
+        col.innerHTML = `
+            <div class="card device-card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="card-title mb-0">
+                            <span class="status-indicator status-${device.status}"></span>
+                            ${device.device_type.replace('_', ' ').toUpperCase()}
+                        </h5>
+                        <button class="btn btn-sm btn-outline-primary" onclick="showDeviceDetails('${device.id}')">
+                            <i class="bx bx-info-circle"></i>
+                        </button>
+                    </div>
+                    <div class="device-stats">
+                        <p class="mb-1"><i class="bx bx-id-card"></i> ID: ${device.device_id}</p>
+                        <p class="mb-1"><i class="bx bx-map"></i> Location: ${device.location}</p>
+                        <p class="mb-1"><i class="bx bx-wifi"></i> IP: ${device.ip_address}</p>
+                        <p class="mb-0"><i class="bx bx-time"></i> Last Ping: ${new Date(device.last_ping).toLocaleString()}</p>
+                    </div>
+                </div>
+            </div>
+        `;
+        grid.appendChild(col);
+    });
+    
+    // Update counters
+    document.getElementById('online-count').textContent = onlineCount;
+    document.getElementById('offline-count').textContent = offlineCount;
+    document.getElementById('warning-count').textContent = warningCount;
+    document.getElementById('total-count').textContent = devices.length;
+    
+    // Update status distribution chart
+    statusDistributionChart.data.datasets[0].data = [onlineCount, offlineCount, warningCount];
+    statusDistributionChart.update();
+}
+
+function updateResponseTimeChart(data) {
+    const labels = data.map(d => new Date(d.timestamp).toLocaleTimeString());
+    const values = data.map(d => d.response_time);
+    
+    responseTimeChart.data.labels = labels;
+    responseTimeChart.data.datasets[0].data = values;
+    responseTimeChart.update();
+}
+
+function loadDevices() {
+    fetch('/api/hardware')
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                updateDeviceGrid(data.data.devices);
+            }
+        });
+    
+    fetch('/api/hardware/metrics')
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                updateResponseTimeChart(data.data.response_times);
+            }
+        });
+}
+
+function showDeviceDetails(deviceId) {
+    fetch(`/api/hardware/${deviceId}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                const device = data.data.device;
+                
+                // Update device information
+                document.getElementById('detail-device-id').textContent = device.device_id;
+                document.getElementById('detail-type').textContent = device.device_type.replace('_', ' ').toUpperCase();
+                document.getElementById('detail-location').textContent = device.location;
+                document.getElementById('detail-ip').textContent = device.ip_address;
+                document.getElementById('detail-status').innerHTML = `
+                    <span class="badge bg-${device.status === 'online' ? 'success' : device.status === 'warning' ? 'warning' : 'danger'}">
+                        ${device.status.toUpperCase()}
+                    </span>
+                `;
+                document.getElementById('detail-last-ping').textContent = new Date(device.last_ping).toLocaleString();
+                
+                // Update performance metrics
+                document.getElementById('detail-response-time').textContent = `${device.avg_response_time} ms`;
+                document.getElementById('detail-uptime').textContent = `${device.uptime_24h}%`;
+                document.getElementById('detail-error-rate').textContent = `${device.error_rate_24h}%`;
+                
+                // Update events table
+                const eventsTable = document.getElementById('deviceEventsTable').getElementsByTagName('tbody')[0];
+                eventsTable.innerHTML = '';
+                
+                device.recent_events.forEach(event => {
+                    const row = eventsTable.insertRow();
+                    row.innerHTML = `
+                        <td>${new Date(event.timestamp).toLocaleString()}</td>
+                        <td>${event.event_type}</td>
+                        <td>
+                            <span class="badge bg-${event.status === 'success' ? 'success' : 'danger'}">
+                                ${event.status}
+                            </span>
+                        </td>
+                        <td>${event.details}</td>
+                    `;
+                });
+                
+                // Setup action buttons
+                document.getElementById('restartDevice').onclick = () => restartDevice(deviceId);
+                document.getElementById('deleteDevice').onclick = () => deleteDevice(deviceId);
+                
+                // Show modal
+                new bootstrap.Modal(document.getElementById('deviceDetailsModal')).show();
+            }
+        });
+}
+
+function restartDevice(deviceId) {
+    if (confirm('Are you sure you want to restart this device?')) {
+        fetch(`/api/hardware/${deviceId}/restart`, {
+            method: 'POST'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                loadDevices();
+            }
+        });
+    }
+}
+
+function deleteDevice(deviceId) {
+    if (confirm('Are you sure you want to delete this device?')) {
+        fetch(`/api/hardware/${deviceId}`, {
+            method: 'DELETE'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                bootstrap.Modal.getInstance(document.getElementById('deviceDetailsModal')).hide();
+                loadDevices();
+            }
+        });
+    }
+}
+
+// Event Listeners
+document.getElementById('saveDevice').addEventListener('click', function() {
+    const form = document.getElementById('addDeviceForm');
+    const formData = new FormData(form);
+    
+    fetch('/api/hardware', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            device_type: formData.get('deviceType'),
+            device_id: formData.get('deviceId'),
+            location: formData.get('location'),
+            ip_address: formData.get('ipAddress')
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            bootstrap.Modal.getInstance(document.getElementById('addDeviceModal')).hide();
+            form.reset();
+            loadDevices();
+        }
+    });
+});
+
+// Initialize
+initCharts();
+loadDevices();
+
+// Auto-refresh every 30 seconds
+setInterval(loadDevices, 30000);
+</script>
+{% endblock %}
