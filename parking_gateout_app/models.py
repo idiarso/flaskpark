@@ -1,6 +1,9 @@
 from datetime import datetime
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import UserMixin
+from typing import Optional
+from sqlalchemy import Column, Integer, String, Boolean, DateTime, Numeric, ForeignKey, JSON
+from sqlalchemy.ext.hybrid import hybrid_property
 
 db = SQLAlchemy()
 
@@ -12,6 +15,14 @@ class AspNetUsers(db.Model, UserMixin):
     FullName = db.Column(db.String(256))
     CreatedAt = db.Column(db.DateTime, default=datetime.utcnow)
     IsActive = db.Column(db.Boolean, default=True)
+
+class AccessTokens(db.Model):
+    Id = db.Column(db.Integer, primary_key=True)
+    Token = db.Column(db.String(500), unique=True)
+    UserId = db.Column(db.String(36), db.ForeignKey('asp_net_users.Id'))
+    IsRevoked = db.Column(db.Boolean, default=False)
+    ExpiresAt = db.Column(db.DateTime)
+    CreatedAt = db.Column(db.DateTime, default=datetime.utcnow)
 
 class AspNetRoles(db.Model):
     Id = db.Column(db.String(36), primary_key=True)
@@ -31,11 +42,12 @@ class SystemConfig(db.Model):
     UpdatedBy = db.Column(db.String(36), db.ForeignKey('asp_net_users.Id'))
 
 class ParkingRate(db.Model):
+    __tablename__ = 'ParkingRate'
     Id = db.Column(db.Integer, primary_key=True)
-    VehicleType = db.Column(db.String(50))
-    DurationType = db.Column(db.String(20))  # hourly, daily, monthly
-    BaseDuration = db.Column(db.Integer)  # in minutes
-    BaseRate = db.Column(db.Numeric(10, 2))
+    VehicleType = db.Column(db.String(50), nullable=False)
+    DurationType = db.Column(db.String(50), nullable=False)
+    BaseDuration = db.Column(db.Integer, nullable=False)
+    BaseRate = db.Column(db.Numeric(10, 2), nullable=False)
     AdditionalRate = db.Column(db.Numeric(10, 2))
     MaxDailyRate = db.Column(db.Numeric(10, 2))
     IsActive = db.Column(db.Boolean, default=True)
@@ -104,12 +116,13 @@ class Shifts(db.Model):
     IsActive = db.Column(db.Boolean, default=True)
 
 class Vehicles(db.Model):
-    Id = db.Column(db.Integer, primary_key=True)
-    PlateNumber = db.Column(db.String(20))
-    VehicleType = db.Column(db.String(50))
-    MemberId = db.Column(db.Integer, db.ForeignKey('members.Id'))
-    Status = db.Column(db.String(20))  # registered, blacklisted
-    CreatedAt = db.Column(db.DateTime, default=datetime.utcnow)
+    __tablename__ = 'Vehicles'
+    Id = db.Column(db.String(36), primary_key=True)
+    plate_number = db.Column(db.String(20), unique=True, nullable=False)
+    vehicle_type = db.Column(db.String(50), nullable=False)
+    status = db.Column(db.String(20), default='active')
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
 class ParkingSpaces(db.Model):
     Id = db.Column(db.Integer, primary_key=True)
@@ -133,14 +146,15 @@ class ParkingTickets(db.Model):
     CreatedBy = db.Column(db.String(36), db.ForeignKey('asp_net_users.Id'))
 
 class ParkingTransactions(db.Model):
-    Id = db.Column(db.Integer, primary_key=True)
-    TicketId = db.Column(db.Integer, db.ForeignKey('parking_tickets.Id'))
-    TransactionNumber = db.Column(db.String(20), unique=True)
-    Amount = db.Column(db.Numeric(10, 2))
-    PaymentMethod = db.Column(db.String(20))
-    Status = db.Column(db.String(20))  # pending, completed, failed
-    CreatedAt = db.Column(db.DateTime, default=datetime.utcnow)
-    ProcessedBy = db.Column(db.String(36), db.ForeignKey('asp_net_users.Id'))
+    __tablename__ = 'ParkingTransactions'
+    Id = db.Column(db.String(36), primary_key=True)
+    ticket_id = db.Column(db.String(36), db.ForeignKey('ParkingTickets.Id'), nullable=False)
+    transaction_number = db.Column(db.String(50), unique=True, nullable=False)
+    amount = db.Column(db.Numeric(10, 2), nullable=False)
+    payment_method = db.Column(db.String(50), nullable=False)
+    status = db.Column(db.String(20), default='pending')
+    processed_by = db.Column(db.String(36), db.ForeignKey('AspNetUsers.Id'))
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 class HardwareStatus(db.Model):
     Id = db.Column(db.Integer, primary_key=True)
@@ -153,10 +167,12 @@ class HardwareStatus(db.Model):
     Details = db.Column(db.JSON)
 
 class ActivityLog(db.Model):
+    __tablename__ = 'ActivityLog'
     Id = db.Column(db.Integer, primary_key=True)
-    Action = db.Column(db.String(50))
+    Action = db.Column(db.String(50), nullable=False)
     Details = db.Column(db.String(500))
-    Status = db.Column(db.String(20))  # success, failed
-    UserId = db.Column(db.String(36), db.ForeignKey('asp_net_users.Id'))
+    Status = db.Column(db.String(20), default='success')
+    UserId = db.Column(db.String(36), db.ForeignKey('AspNetUsers.Id'))
     IpAddress = db.Column(db.String(15))
+    IsRead = db.Column(db.Boolean, default=False)
     CreatedAt = db.Column(db.DateTime, default=datetime.utcnow)

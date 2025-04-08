@@ -1,187 +1,231 @@
 {% extends "base.html" %}
 
-{% block title %}Dashboard{% endblock %}
+{% block title %}Dashboard - FlashPark{% endblock %}
 
 {% block content %}
-<div class="row">
-    <div class="col-12">
-        <h1 class="h3 mb-4">Dashboard</h1>
-    </div>
-</div>
+<div class="container-fluid">
+    <div class="row">
+        <!-- Sidebar -->
+        <nav class="col-md-3 col-lg-2 d-md-block bg-light sidebar collapse">
+            <div class="position-sticky pt-3">
+                <ul class="nav flex-column">
+                    <li class="nav-item">
+                        <a class="nav-link active" href="{{ url_for('dashboard.index') }}">
+                            <i class="fas fa-tachometer-alt"></i> Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" data-bs-toggle="collapse" data-bs-target="#parkingSubmenu">
+                            <i class="fas fa-parking"></i> Parking Management
+                        </a>
+                        <ul class="nav flex-column collapse" id="parkingSubmenu">
+                            <li class="nav-item">
+                                <a class="nav-link" href="{{ url_for('dashboard.parking_entry') }}">
+                                    <i class="fas fa-car"></i> Vehicle Entry/Exit
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="{{ url_for('dashboard.parking_slots') }}">
+                                    <i class="fas fa-map-marker-alt"></i> Parking Slots
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="{{ url_for('dashboard.active_sessions') }}">
+                                    <i class="fas fa-clock"></i> Active Sessions
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" data-bs-toggle="collapse" data-bs-target="#membershipSubmenu">
+                            <i class="fas fa-id-card"></i> Membership
+                        </a>
+                        <ul class="nav flex-column collapse" id="membershipSubmenu">
+                            <li class="nav-item">
+                                <a class="nav-link" href="{{ url_for('dashboard.members') }}">
+                                    <i class="fas fa-users"></i> Members
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="{{ url_for('dashboard.member_cards') }}">
+                                    <i class="fas fa-credit-card"></i> Member Cards
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="{{ url_for('dashboard.member_rates') }}">
+                                    <i class="fas fa-tags"></i> Member Rates
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" data-bs-toggle="collapse" data-bs-target="#staffSubmenu">
+                            <i class="fas fa-user-tie"></i> Staff
+                        </a>
+                        <ul class="nav flex-column collapse" id="staffSubmenu">
+                            <li class="nav-item">
+                                <a class="nav-link" href="{{ url_for('dashboard.staff') }}">
+                                    <i class="fas fa-list"></i> Staff List
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="{{ url_for('dashboard.staff_attendance') }}">
+                                    <i class="fas fa-calendar-check"></i> Attendance
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="{{ url_for('dashboard.shifts') }}">
+                                    <i class="fas fa-clock"></i> Shift Management
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" data-bs-toggle="collapse" data-bs-target="#reportsSubmenu">
+                            <i class="fas fa-chart-bar"></i> Reports
+                        </a>
+                        <ul class="nav flex-column collapse" id="reportsSubmenu">
+                            <li class="nav-item">
+                                <a class="nav-link" href="{{ url_for('dashboard.financial_reports') }}">
+                                    <i class="fas fa-money-bill-wave"></i> Financial Reports
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="{{ url_for('dashboard.usage_stats') }}">
+                                    <i class="fas fa-chart-line"></i> Usage Statistics
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="{{ url_for('dashboard.activity_logs') }}">
+                                    <i class="fas fa-history"></i> Activity Logs
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" data-bs-toggle="collapse" data-bs-target="#settingsSubmenu">
+                            <i class="fas fa-cog"></i> Settings
+                        </a>
+                        <ul class="nav flex-column collapse" id="settingsSubmenu">
+                            <li class="nav-item">
+                                <a class="nav-link" href="{{ url_for('dashboard.parking_rates') }}">
+                                    <i class="fas fa-tag"></i> Parking Rates
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="{{ url_for('dashboard.hardware') }}">
+                                    <i class="fas fa-microchip"></i> Hardware
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="{{ url_for('dashboard.users') }}">
+                                    <i class="fas fa-users-cog"></i> Users
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="{{ url_for('dashboard.system_settings') }}">
+                                    <i class="fas fa-sliders-h"></i> System Settings
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+        </nav>
 
-<div class="row">
-    <!-- Stats Cards -->
-    <div class="col-xl-3 col-md-6">
-        <div class="card card-stats bg-primary text-white">
-            <div class="card-body">
-                <div class="row">
-                    <div class="col">
-                        <h5 class="card-title text-uppercase mb-0 text-white-50">Active Sessions</h5>
-                        <span class="card-value h2 font-weight-bold mb-0" id="active-sessions">0</span>
-                    </div>
-                    <div class="col-auto">
-                        <div class="icon icon-shape bg-white text-primary rounded-circle shadow">
-                            <i class="bx bx-car"></i>
-                        </div>
+        <!-- Main content -->
+        <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+            <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                <h1 class="h2">Dashboard</h1>
+                <div class="btn-toolbar mb-2 mb-md-0">
+                    <div class="btn-group me-2">
+                        <button type="button" class="btn btn-sm btn-outline-secondary" id="refreshBtn">
+                            <i class="fas fa-sync-alt"></i> Refresh
+                        </button>
                     </div>
                 </div>
             </div>
-        </div>
-    </div>
-    <div class="col-xl-3 col-md-6">
-        <div class="card card-stats bg-info text-white">
-            <div class="card-body">
-                <div class="row">
-                    <div class="col">
-                        <h5 class="card-title text-uppercase mb-0 text-white-50">Available Spaces</h5>
-                        <span class="card-value h2 font-weight-bold mb-0" id="available-spaces">0</span>
-                    </div>
-                    <div class="col-auto">
-                        <div class="icon icon-shape bg-white text-info rounded-circle shadow">
-                            <i class="bx bx-map-alt"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="col-xl-3 col-md-6">
-        <div class="card card-stats bg-success text-white">
-            <div class="card-body">
-                <div class="row">
-                    <div class="col">
-                        <h5 class="card-title text-uppercase mb-0 text-white-50">Today's Revenue</h5>
-                        <span class="card-value h2 font-weight-bold mb-0" id="today-revenue">$0</span>
-                    </div>
-                    <div class="col-auto">
-                        <div class="icon icon-shape bg-white text-success rounded-circle shadow">
-                            <i class="bx bx-money"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="col-xl-3 col-md-6">
-        <div class="card card-stats bg-warning text-white">
-            <div class="card-body">
-                <div class="row">
-                    <div class="col">
-                        <h5 class="card-title text-uppercase mb-0 text-white-50">Total Vehicles</h5>
-                        <span class="card-value h2 font-weight-bold mb-0" id="total-vehicles">0</span>
-                    </div>
-                    <div class="col-auto">
-                        <div class="icon icon-shape bg-white text-warning rounded-circle shadow">
-                            <i class="bx bx-list-ul"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
 
-<div class="row mt-4">
-    <!-- Hardware Status -->
-    <div class="col-12 col-lg-6">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="card-title mb-0">Hardware Status</h5>
-            </div>
-            <div class="card-body">
-                <div class="table-responsive">
-                    <table class="table" id="hardware-status">
-                        <thead>
-                            <tr>
-                                <th>Device</th>
-                                <th>Location</th>
-                                <th>Status</th>
-                                <th>Last Update</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                        </tbody>
-                    </table>
+            <!-- Stats Cards -->
+            <div class="row">
+                <div class="col-md-3 mb-4">
+                    <div class="card" data-api="/api/parking-sessions/active">
+                        <div class="card-body">
+                            <h5 class="card-title">Active Sessions</h5>
+                            <h2 class="card-text" id="activeSessions">0</h2>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-4">
+                    <div class="card" data-api="/api/dashboard/stats/overview">
+                        <div class="card-body">
+                            <h5 class="card-title">Available Spaces</h5>
+                            <h2 class="card-text" id="availableSpaces">0</h2>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-4">
+                    <div class="card" data-api="/api/reports/daily">
+                        <div class="card-body">
+                            <h5 class="card-title">Today's Revenue</h5>
+                            <h2 class="card-text" id="todayRevenue">$0</h2>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-4">
+                    <div class="card" data-api="/api/vehicles">
+                        <div class="card-body">
+                            <h5 class="card-title">Total Vehicles</h5>
+                            <h2 class="card-text" id="totalVehicles">0</h2>
+                        </div>
+                    </div>
                 </div>
             </div>
-        </div>
-    </div>
 
-    <!-- Recent Activities -->
-    <div class="col-12 col-lg-6">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="card-title mb-0">Recent Activities</h5>
-            </div>
-            <div class="card-body">
-                <div class="table-responsive">
-                    <table class="table" id="recent-activities">
-                        <thead>
-                            <tr>
-                                <th>Time</th>
-                                <th>Action</th>
-                                <th>Status</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                        </tbody>
-                    </table>
+            <!-- Recent Activities and Active Sessions -->
+            <div class="row">
+                <div class="col-md-6 mb-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">Recent Activities</h5>
+                        </div>
+                        <div class="card-body" data-api="/api/activities?per_page=5">
+                            <div class="list-group" id="recentActivities">
+                                <!-- Activities will be loaded here -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6 mb-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">Active Parking Sessions</h5>
+                        </div>
+                        <div class="card-body" data-api="/api/parking-sessions/active">
+                            <div class="table-responsive">
+                                <table class="table table-striped">
+                                    <thead>
+                                        <tr>
+                                            <th>Ticket #</th>
+                                            <th>Vehicle</th>
+                                            <th>Entry Time</th>
+                                            <th>Duration</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="activeSessionsTable">
+                                        <!-- Active sessions will be loaded here -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
-        </div>
+        </main>
     </div>
 </div>
 {% endblock %}
 
 {% block extra_js %}
-<script>
-function updateDashboard() {
-    // Get dashboard data
-    fetch('/api/dashboard')
-        .then(response => response.json())
-        .then(data => {
-            if (data.status === 'success') {
-                document.getElementById('active-sessions').textContent = data.data.active_sessions;
-                document.getElementById('available-spaces').textContent = data.data.available_spaces;
-                document.getElementById('today-revenue').textContent = '$' + data.data.today_revenue.toFixed(2);
-                document.getElementById('total-vehicles').textContent = data.data.total_vehicles;
-                
-                // Update hardware status
-                const hardwareTable = document.getElementById('hardware-status').getElementsByTagName('tbody')[0];
-                hardwareTable.innerHTML = '';
-                data.data.hardware_status.forEach(device => {
-                    const row = hardwareTable.insertRow();
-                    row.innerHTML = `
-                        <td>${device.device_type}</td>
-                        <td>${device.location}</td>
-                        <td><span class="badge bg-${device.status === 'online' ? 'success' : 'danger'}">${device.status}</span></td>
-                        <td>${new Date(device.last_ping).toLocaleString()}</td>
-                    `;
-                });
-            }
-        });
-    
-    // Get recent activities
-    fetch('/api/activities?per_page=5')
-        .then(response => response.json())
-        .then(data => {
-            if (data.status === 'success') {
-                const activitiesTable = document.getElementById('recent-activities').getElementsByTagName('tbody')[0];
-                activitiesTable.innerHTML = '';
-                data.data.activities.forEach(activity => {
-                    const row = activitiesTable.insertRow();
-                    row.innerHTML = `
-                        <td>${new Date(activity.created_at).toLocaleString()}</td>
-                        <td>${activity.action}</td>
-                        <td><span class="badge bg-${activity.status === 'success' ? 'success' : 'danger'}">${activity.status}</span></td>
-                    `;
-                });
-            }
-        });
-}
-
-// Update dashboard every 30 seconds
-updateDashboard();
-setInterval(updateDashboard, 30000);
-</script>
+<script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
 {% endblock %}

@@ -1,0 +1,16 @@
+{
+    "venvPath": ".",
+    "venv": "venv",
+    "reportMissingImports": false,
+    "pythonVersion": "3.11",
+    "typeCheckingMode": "basic",
+    "useLibraryCodeForTypes": true,
+    "include": [
+        "parking_gateout_app/**/*.py"
+    ],
+    "exclude": [
+        "**/node_modules",
+        "**/__pycache__",
+        "**/venv"
+    ]
+} 

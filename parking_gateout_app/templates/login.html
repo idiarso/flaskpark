@@ -3,21 +3,102 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="/static/css/style.css">
-    <title>Login</title>
+    <title>Login - Parking System</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <!-- Toastify -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
+    <style>
+        body {
+            background-color: #f8f9fa;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .login-container {
+            max-width: 400px;
+            width: 100%;
+            padding: 2rem;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .login-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        .login-header i {
+            font-size: 3rem;
+            color: #0d6efd;
+            margin-bottom: 1rem;
+        }
+        .form-floating {
+            margin-bottom: 1rem;
+        }
+        .alert {
+            display: none;
+        }
+    </style>
 </head>
 <body>
-    <div class="container">
-        <h2>Operator Login</h2>
-        <form id="loginForm">
-            <label for="email">Email:</label>
-            <input type="email" id="email" name="email" required>
-            <label for="password">Password:</label>
-            <input type="password" id="password" name="password" required>
-            <button type="submit">Login</button>
+    <div class="login-container">
+        <div class="login-header">
+            <i class="fas fa-parking"></i>
+            <h2>Parking System</h2>
+            <p class="text-muted">Operator Login</p>
+        </div>
+        
+        <div class="alert alert-danger" id="errorAlert" role="alert"></div>
+        
+        <form id="login-form">
+            <div class="form-floating mb-3">
+                <input type="email" class="form-control" id="email" name="email" placeholder="name@example.com" required>
+                <label for="email">Email address</label>
+            </div>
+            <div class="form-floating mb-3">
+                <input type="password" class="form-control" id="password" name="password" placeholder="Password" required>
+                <label for="password">Password</label>
+            </div>
+            <button class="w-100 btn btn-lg btn-primary" type="submit">
+                <i class="fas fa-sign-in-alt me-2"></i>Sign in
+            </button>
         </form>
-        <div id="loginMessage"></div>
     </div>
-    <script src="/static/js/script.js"></script>
+
+    <!-- Bootstrap JS Bundle with Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Toastify -->
+    <script src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
+    <!-- Auth JS -->
+    <script src="{{ url_for('static', filename='js/auth.js') }}"></script>
+    <script>
+        function showToast(message, type = 'info') {
+            if (typeof Toastify === 'function') {
+                Toastify({
+                    text: message,
+                    duration: 3000,
+                    close: true,
+                    gravity: 'top',
+                    position: 'right',
+                    backgroundColor: type === 'error' ? '#e74c3c' : 
+                                    type === 'success' ? '#2ecc71' : '#3498db',
+                }).showToast();
+            } else {
+                console.log(`Toast (${type}): ${message}`);
+            }
+        }
+
+        // Check if we have been redirected due to auth error
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.has('error')) {
+            showToast('Session expired. Please login again.', 'error');
+        }
+
+        // Clear any previous token
+        localStorage.removeItem('authToken');
+    </script>
 </body>
 </html>

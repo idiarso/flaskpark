@@ -10,6 +10,12 @@
     <!-- Boxicons CSS -->
     <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
     
+    <!-- Include CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap.min.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+    <!-- Toastify library for notifications -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
+    
     <style>
         :root {
             --sidebar-width: 280px;
@@ -258,29 +264,47 @@
                     <span>System Settings</span>
                 </a>
             </li>
+            
+            <!-- Divider -->
+            <hr class="sidebar-divider">
+            
+            <!-- Heading -->
+            <div class="sidebar-heading">
+                Operations
+            </div>
+            
+            <!-- Parking Sessions Nav Item -->
+            <li class="menu-item">
+                <a href="{{ url_for('dashboard.parking_sessions') }}" class="menu-link">
+                    <i class="bx bxs-car"></i>
+                    <span>Parking Sessions</span>
+                </a>
+            </li>
         </ul>
     </div>
     
     <!-- Main Content -->
     <div class="main-content">
         <!-- Navbar -->
-        <nav class="navbar navbar-expand-lg navbar-light mb-4">
+        <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
             <div class="container-fluid">
-                <button class="btn btn-link sidebar-toggler">
-                    <i class="bx bx-menu"></i>
+                <a class="navbar-brand" href="/">Parking Gateout</a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                    <span class="navbar-toggler-icon"></span>
                 </button>
-                
-                <div class="d-flex align-items-center">
-                    <div class="dropdown">
-                        <a href="#" class="d-flex align-items-center text-dark text-decoration-none dropdown-toggle" id="userDropdown" data-bs-toggle="dropdown">
-                            <i class="bx bx-user-circle fs-4 me-2"></i>
-                            <span>{{ current_user.username }}</span>
-                        </a>
-                        <ul class="dropdown-menu dropdown-menu-end">
-                            <li><a class="dropdown-item" href="{{ url_for('dashboard.profile') }}">Profile</a></li>
-                            <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item" href="{{ url_for('auth.logout') }}">Logout</a></li>
-                        </ul>
+                <div class="collapse navbar-collapse" id="navbarNav">
+                    <ul class="navbar-nav me-auto">
+                        <li class="nav-item">
+                            <a class="nav-link" href="/dashboard">Dashboard</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/reports">Reports</a>
+                        </li>
+                    </ul>
+                    <div class="d-flex">
+                        <button id="logoutButton" class="btn btn-outline-light">
+                            <i class="fas fa-sign-out-alt"></i> Sign Out
+                        </button>
                     </div>
                 </div>
             </div>
@@ -335,6 +359,10 @@
             document.querySelector('.main-content').classList.add('expanded');
         }
     </script>
+    <!-- Include JavaScript -->
+    <script src="{{ url_for('static', filename='js/bootstrap.bundle.min.js') }}" defer></script>
+    <script src="{{ url_for('static', filename='js/auth.js') }}"></script>
     {% block extra_js %}{% endblock %}
+    <script src="https://cdn.jsdelivr.net/npm/toastify-js" defer></script>
 </body>
 </html>

@@ -3,31 +3,171 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="/static/css/style.css">
-    <title>Dashboard</title>
+    <title>Parking Gate Out Dashboard</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .sidebar {
+            min-height: 100vh;
+            background-color: #343a40;
+            color: white;
+        }
+        .sidebar .nav-link {
+            color: rgba(255,255,255,.75);
+        }
+        .sidebar .nav-link:hover {
+            color: white;
+        }
+        .sidebar .nav-link.active {
+            color: white;
+            background-color: rgba(255,255,255,.1);
+        }
+        .stat-card {
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            transition: transform 0.2s;
+        }
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+        .table-container {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+    </style>
 </head>
 <body>
-    <div class="container">
-        <h2>Operator Dashboard</h2>
-        <h3>Active Vehicles</h3>
-        <table id="activeVehiclesTable">
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Sidebar -->
+            <div class="col-md-3 col-lg-2 px-0 sidebar">
+                <div class="d-flex flex-column p-3">
+                    <h4 class="mb-4">Parking System</h4>
+                    <ul class="nav nav-pills flex-column mb-auto">
+                        <li class="nav-item">
+                            <a href="#" class="nav-link active">
+                                <i class="fas fa-home me-2"></i>Dashboard
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="/exit" class="nav-link">
+                                <i class="fas fa-car me-2"></i>Process Exit
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="#" class="nav-link">
+                                <i class="fas fa-chart-bar me-2"></i>Reports
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="#" class="nav-link">
+                                <i class="fas fa-cog me-2"></i>Settings
+                            </a>
+                        </li>
+                    </ul>
+                    <hr>
+                    <div class="dropdown">
+                        <a href="#" class="d-flex align-items-center text-white text-decoration-none dropdown-toggle" id="dropdownUser1" data-bs-toggle="dropdown">
+                            <i class="fas fa-user-circle me-2"></i>
+                            <span id="operatorName">Operator Name</span>
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-dark text-small shadow">
+                            <li><a class="dropdown-item" href="#">Profile</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="#" id="logoutBtn">Sign out</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Main Content -->
+            <div class="col-md-9 col-lg-10 px-4 py-3">
+                <h2 class="mb-4">Dashboard</h2>
+                
+                <!-- Statistics Cards -->
+                <div class="row mb-4">
+                    <div class="col-md-3">
+                        <div class="card stat-card bg-primary text-white">
+                            <div class="card-body">
+                                <h5 class="card-title">Active Vehicles</h5>
+                                <h2 class="card-text" id="activeVehiclesCount">0</h2>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card stat-card bg-success text-white">
+                            <div class="card-body">
+                                <h5 class="card-title">Today's Revenue</h5>
+                                <h2 class="card-text" id="todayRevenue">Rp 0</h2>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card stat-card bg-warning text-white">
+                            <div class="card-body">
+                                <h5 class="card-title">Available Spaces</h5>
+                                <h2 class="card-text" id="availableSpaces">0</h2>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card stat-card bg-info text-white">
+                            <div class="card-body">
+                                <h5 class="card-title">Today's Exits</h5>
+                                <h2 class="card-text" id="todayExits">0</h2>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Active Vehicles Table -->
+                <div class="table-container">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h4>Active Vehicles</h4>
+                        <button class="btn btn-primary" onclick="refreshActiveVehicles()">
+                            <i class="fas fa-sync-alt me-2"></i>Refresh
+                        </button>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-hover" id="activeVehiclesTable">
             <thead>
                 <tr>
                     <th>Plate Number</th>
                     <th>Entry Time</th>
-                    <th>Parking Space ID</th>
+                                    <th>Parking Space</th>
+                                    <th>Duration</th>
+                                    <th>Actions</th>
                 </tr>
             </thead>
             <tbody>
                 <!-- Active vehicles will be populated here -->
             </tbody>
         </table>
-        <h3>Recent Payments</h3>
-        <table id="recentPaymentsTable">
+                    </div>
+                </div>
+
+                <!-- Recent Payments Table -->
+                <div class="table-container">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h4>Recent Payments</h4>
+                        <button class="btn btn-primary" onclick="refreshPayments()">
+                            <i class="fas fa-sync-alt me-2"></i>Refresh
+                        </button>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-hover" id="recentPaymentsTable">
             <thead>
                 <tr>
                     <th>Ticket ID</th>
+                                    <th>Plate Number</th>
                     <th>Amount</th>
+                                    <th>Payment Method</th>
+                                    <th>Time</th>
                     <th>Status</th>
                 </tr>
             </thead>
@@ -36,6 +176,124 @@
             </tbody>
         </table>
     </div>
-    <script src="/static/js/script.js"></script>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS Bundle with Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Function to format currency
+        function formatCurrency(amount) {
+            return new Intl.NumberFormat('id-ID', {
+                style: 'currency',
+                currency: 'IDR',
+                minimumFractionDigits: 0
+            }).format(amount);
+        }
+
+        // Function to format date/time
+        function formatDateTime(dateTime) {
+            return new Date(dateTime).toLocaleString('id-ID');
+        }
+
+        // Function to calculate duration
+        function calculateDuration(entryTime) {
+            const entry = new Date(entryTime);
+            const now = new Date();
+            const diff = now - entry;
+            const hours = Math.floor(diff / (1000 * 60 * 60));
+            const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+            return `${hours}h ${minutes}m`;
+        }
+
+        // Function to refresh active vehicles
+        function refreshActiveVehicles() {
+            fetch('/api/parking-sessions/active')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        const tbody = document.querySelector('#activeVehiclesTable tbody');
+                        tbody.innerHTML = '';
+                        data.data.forEach(vehicle => {
+                            const row = document.createElement('tr');
+                            row.innerHTML = `
+                                <td>${vehicle.plateNumber}</td>
+                                <td>${formatDateTime(vehicle.entryTime)}</td>
+                                <td>${vehicle.parkingSpaceId}</td>
+                                <td>${calculateDuration(vehicle.entryTime)}</td>
+                                <td>
+                                    <button class="btn btn-sm btn-success" onclick="processExit('${vehicle.plateNumber}')">
+                                        <i class="fas fa-car-side"></i> Process Exit
+                                    </button>
+                                </td>
+                            `;
+                            tbody.appendChild(row);
+                        });
+                        document.getElementById('activeVehiclesCount').textContent = data.data.length;
+                    }
+                });
+        }
+
+        // Function to refresh payments
+        function refreshPayments() {
+            fetch('/api/reports/daily')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        const tbody = document.querySelector('#recentPaymentsTable tbody');
+                        tbody.innerHTML = '';
+                        data.data.transactions.forEach(transaction => {
+                            const row = document.createElement('tr');
+                            row.innerHTML = `
+                                <td>${transaction.ticketId}</td>
+                                <td>${transaction.plateNumber || '-'}</td>
+                                <td>${formatCurrency(transaction.amount)}</td>
+                                <td>${transaction.method}</td>
+                                <td>${formatDateTime(transaction.processedAt)}</td>
+                                <td>
+                                    <span class="badge bg-success">${transaction.status}</span>
+                                </td>
+                            `;
+                            tbody.appendChild(row);
+                        });
+                        document.getElementById('todayRevenue').textContent = formatCurrency(data.data.totalRevenue);
+                        document.getElementById('todayExits').textContent = data.data.totalVehicles;
+                    }
+                });
+        }
+
+        // Function to process vehicle exit
+        function processExit(plateNumber) {
+            window.location.href = `/exit?plate=${plateNumber}`;
+        }
+
+        // Load initial data
+        document.addEventListener('DOMContentLoaded', function() {
+            refreshActiveVehicles();
+            refreshPayments();
+            
+            // Load operator name
+            fetch('/api/auth/profile')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        document.getElementById('operatorName').textContent = data.data.fullName;
+                    }
+                });
+
+            // Logout button handler
+            document.getElementById('logoutBtn').addEventListener('click', function() {
+                fetch('/api/auth/logout', { method: 'POST' })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.status === 'success') {
+                            window.location.href = '/login';
+                        }
+                    });
+            });
+        });
+    </script>
 </body>
 </html>
