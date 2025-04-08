@@ -172,3 +172,214 @@ class ParkingService:
             'start_date': start_date,
             'end_date': end_date
         } 
+        
+    @staticmethod
+    def validate_ticket(ticket_number: str) -> Tuple[bool, Optional[ParkingTickets], str]:
+        """
+        Validate a parking ticket for exit
+        
+        Args:
+            ticket_number: The ticket number to validate
+            
+        Returns:
+            Tuple: (is_valid, ticket_object, message)
+        """
+        ticket = ParkingTickets.query.filter_by(TicketNumber=ticket_number).first()
+        
+        if not ticket:
+            return False, None, "Ticket not found"
+            
+        if ticket.Status != 'active':
+            return False, ticket, f"Invalid ticket status: {ticket.Status}"
+            
+        if ticket.ExitTime:
+            return False, ticket, "Ticket has already been used for exit"
+            
+        return True, ticket, "Ticket is valid"
+        
+    @staticmethod
+    def process_vehicle_exit(ticket_number: str, payment_method: str = 'cash') -> Dict[str, Any]:
+        """
+        Process a vehicle exit using a ticket
+        
+        Args:
+            ticket_number: The ticket number
+            payment_method: Payment method used (cash, card, etc)
+            
+        Returns:
+            Dict: Result of the exit operation
+        """
+        is_valid, ticket, message = ParkingService.validate_ticket(ticket_number)
+        
+        if not is_valid:
+            ParkingService.log_activity(
+                action="VEHICLE_EXIT_FAILED",
+                details=f"Failed exit attempt: {message} for ticket {ticket_number}",
+                status="failed"
+            )
+            ticket_dict = None
+            if ticket:
+                ticket_dict = {
+                    'id': ticket.Id,
+                    'ticket_number': ticket.TicketNumber,
+                    'status': ticket.Status
+                }
+            return {
+                'success': False,
+                'message': message,
+                'ticket': ticket_dict
+            }
+            
+        # Calculate parking fee
+        exit_time = datetime.now()
+        vehicle_type = "Standard"
+        if ticket and ticket.VehicleId:
+            # Get the vehicle type from the related Vehicle object
+            from .models import Vehicles
+            vehicle = Vehicles.query.get(ticket.VehicleId)
+            if vehicle:
+                vehicle_type = vehicle.vehicle_type
+        
+        if ticket:  # Add null check before accessing ticket attributes
+            fee = ParkingService.calculate_parking_fee(
+                ticket.EntryTime, 
+                exit_time, 
+                vehicle_type
+            )
+            
+            # Update ticket
+            ticket.ExitTime = exit_time
+            ticket.Status = 'completed'
+            ticket.Amount = fee
+            
+            # Create transaction
+            transaction = ParkingService.create_transaction(ticket, fee)
+            transaction.payment_method = payment_method
+            
+            # Save changes
+            db.session.commit()
+            
+            # Log activity
+            ParkingService.log_activity(
+                action="VEHICLE_EXIT",
+                details=f"Vehicle exit processed: {ticket.TicketNumber}, Fee: {fee}",
+                status="success"
+            )
+            
+            ticket_dict = {
+                'id': ticket.Id,
+                'ticket_number': ticket.TicketNumber,
+                'entry_time': ticket.EntryTime,
+                'exit_time': ticket.ExitTime,
+                'status': ticket.Status,
+                'fee': ticket.Amount
+            }
+            
+            transaction_dict = {
+                'id': transaction.Id,
+                'amount': transaction.amount,
+                'payment_method': transaction.payment_method,
+                'timestamp': transaction.created_at
+            }
+            
+            return {
+                'success': True,
+                'message': "Exit processed successfully",
+                'ticket': ticket_dict,
+                'fee': fee,
+                'transaction': transaction_dict
+            }
+        
+        return {
+            'success': False,
+            'message': "Failed to process exit: Invalid ticket",
+            'ticket': None
+        }
+        
+    @staticmethod
+    def search_tickets(search_term: str, limit: int = 10) -> List[ParkingTickets]:
+        """
+        Search for parking tickets by ticket number or license plate
+        
+        Args:
+            search_term: Search term (ticket number or plate)
+            limit: Maximum results to return
+            
+        Returns:
+            List[ParkingTickets]: Matching tickets
+        """
+        search_term = search_term.strip().upper()
+        
+        # Search by ticket number
+        tickets = ParkingTickets.query.filter(
+            ParkingTickets.TicketNumber.like(f"%{search_term}%")
+        ).limit(limit).all()
+        
+        # If no results, try by license plate
+        if not tickets:
+            from .models import Vehicles
+            vehicles = Vehicles.query.filter(
+                Vehicles.plate_number.like(f"%{search_term}%")
+            ).all()
+            
+            if vehicles:
+                vehicle_ids = [v.Id for v in vehicles]
+                tickets = ParkingTickets.query.filter(
+                    ParkingTickets.VehicleId.in_(vehicle_ids)
+                ).limit(limit).all()
+                
+        return tickets
+        
+    @staticmethod
+    def get_daily_report(report_date: Optional[datetime] = None) -> Dict[str, Any]:
+        """
+        Generate a daily report of parking operations
+        
+        Args:
+            report_date: The date for the report (defaults to today)
+            
+        Returns:
+            Dict: Report data
+        """
+        if not report_date:
+            report_date = datetime.now()
+            
+        start_date = report_date.replace(hour=0, minute=0, second=0, microsecond=0)
+        end_date = start_date + timedelta(days=1) - timedelta(microseconds=1)
+        
+        # Get basic statistics
+        stats = ParkingService.get_parking_statistics(start_date, end_date)
+        
+        # Get hourly breakdown
+        hourly_data = {}
+        for hour in range(24):
+            hour_start = start_date + timedelta(hours=hour)
+            hour_end = hour_start + timedelta(hours=1) - timedelta(microseconds=1)
+            
+            tickets = ParkingTickets.query.filter(
+                ParkingTickets.EntryTime.between(hour_start, hour_end)
+            ).all()
+            
+            hourly_data[hour] = len(tickets)
+            
+        # Get peak hour
+        peak_hour = None
+        if hourly_data:
+            peak_hour = max(hourly_data.items(), key=lambda x: x[1])[0]
+        
+        # Add activity logs
+        activity_logs = ActivityLog.query.filter(
+            ActivityLog.CreatedAt.between(start_date, end_date)
+        ).all()
+        
+        # Count issues/errors
+        issues = [log for log in activity_logs if log.Status == 'failed']
+        
+        return {
+            **stats,
+            'hourly_breakdown': hourly_data,
+            'peak_hour': peak_hour,
+            'activity_count': len(activity_logs),
+            'issue_count': len(issues),
+            'report_date': report_date.strftime('%Y-%m-%d')
+        } 
